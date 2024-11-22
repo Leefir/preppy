@@ -1,0 +1,6 @@
+# Core dependencies
+numpy>=1.21.0
+
+# Development dependencies
+pytest>=7.0.0
+flake8<=4.0.1
