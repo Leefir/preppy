@@ -3,3 +3,4 @@ tests/__pycache__/
 psepy.egg-info
 .pytest_cache
 pse/__pycache__/
+/PSE_ppt/
