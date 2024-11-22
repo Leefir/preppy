@@ -1,1 +1,1 @@
-hii
+print("Hello, world!")
