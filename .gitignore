@@ -2,3 +2,4 @@ test.ipynb
 tests/__pycache__/
 psepy.egg-info
 .pytest_cache
+pse/__pycache__/
