@@ -45,7 +45,7 @@ def agg_machines(
     # 检测 positional args 类型和取值
     for param, expected_type in expected_types.items():
         value = locals()[param] 
-        if not isinstance(value, expected_type):
+        if not isinstance(value, expected_type) or isinstance(value, str):
             raise TypeError(f"Parameter '{param}' must be of type {expected_type.__name__}, got {type(value).__name__}")
         if param == 'S':
             if value <= 0:
@@ -53,7 +53,7 @@ def agg_machines(
         else:
             if len(value) != S:
                 raise ValueError(f"Parameter '{param}' must have length of {S}")
-            if not all(isinstance(item, (float, int)) for item in value):
+            if not all(isinstance(item, (float, int)) and item > 0 for item in value):
                 raise TypeError(f"Parameter '{param}' contains non-numeric values")
         
     # 检测 default args 是否在指定范围内
@@ -61,10 +61,17 @@ def agg_machines(
         value = locals()[param]  # 获取局部变量值
         if value not in expected_range:
             raise ValueError(f"Parameter '{param}' must be in f{expected_range}")
-
-    c = np.array(c)
-    T_up = np.array(T_up)
-    T_down = np.array(T_down)
+    unit_mapping = {
+        'seconds': 1,
+        'minutes': 60,
+        'hours': 3600,
+        'parts/sec': 1,
+        'parts/min': 1/60,
+        'parts/hour': 1/3600
+    }
+    c = np.array(c) * unit_mapping[c_unit]
+    T_up = np.array(T_up) * unit_mapping[T_up_unit]
+    T_down = np.array(T_down) * unit_mapping[T_down_unit]
 
     if mode == "parallel":
         # 计算 τ_i
@@ -96,12 +103,12 @@ def agg_machines(
         coef = S / c_agg / T_agg_denominator
         T_up_agg *= coef
         T_down_agg *= coef
-        return c_agg, T_up_agg, T_down_agg
     else:
-        pass
+        product_term = np.prod(T_up / (T_up + T_down))
+        mean_term = np.mean(T_up + T_down)
+        # 最终结果
+        c_agg = np.min(c)
+        T_up_agg = mean_term * product_term
+        T_down_agg = mean_term * (1 - product_term)
 
-
-    
-
-
-
+    return round(c_agg / unit_mapping[c_unit], 4), round(T_up_agg / unit_mapping[T_up_unit], 4), round(T_down_agg / unit_mapping[T_down_unit], 4)
