@@ -330,3 +330,4 @@ def performance_measure_multiply_machine_bernoulli(p: list[float],M: int,N: list
     WIP = [round(w, 2) for w in WIP]
     TP = round(PR/t, 4)
     return {"p":p, 'pf':p_f, 'pb':p_b, "ST": ST, "BL": BL, 'N':N,"WIP": WIP, "PR": PR, "TotalWIP": TotalWIP, "TP":TP}
+    
