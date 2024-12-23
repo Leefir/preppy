@@ -15,6 +15,15 @@ Basic usage:
 For more information, please see: https://github.com/yourusername/psepy
 """
 
+from .core import (
+    agg_machines,
+    P_function_two_machine_bernoulli,
+    Q_function,
+    performance_measure_two_machine,
+    aggregation_of_bernoulli_lines,
+    performance_measure_multiply_machine_bernoulli
+)
+
 from .machine_aggregator import MachineAggregator
 from .bernoulli_line import BernoulliLine
 from .validators import InputValidator
@@ -24,6 +33,12 @@ __author__ = "Your Name"
 __license__ = "MIT"
 
 __all__ = [
+    "agg_machines",
+    "P_function_two_machine_bernoulli",
+    "Q_function",
+    "performance_measure_two_machine",
+    "aggregation_of_bernoulli_lines",
+    "performance_measure_multiply_machine_bernoulli",
     "MachineAggregator",
     "BernoulliLine",
     "InputValidator",

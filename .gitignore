@@ -4,3 +4,4 @@ psepy.egg-info
 .pytest_cache
 pse/__pycache__/
 /PSE_ppt/
+psepy/__pycache__/

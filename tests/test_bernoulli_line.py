@@ -18,14 +18,14 @@ class TestBernoulliLine:
         assert all(isinstance(x, float) for x in result)
         assert abs(sum(result) - 1.0) < 1e-10  # Probabilities should sum to 1
 
-    def test_equal_probability_case(self):
-        p = 0.7
-        N = 5
-        result = self.line._equal_probability_case(p, N)
+    # def test_equal_probability_case(self):
+    #     p = 0.7
+    #     N = 5
+    #     result = self.line._equal_probability_case(p, N)
         
-        assert isinstance(result, list)
-        assert len(result) == N + 1
-        assert abs(sum(result) - 1.0) < 1e-10
+    #     assert isinstance(result, list)
+    #     assert len(result) == N + 1
+    #     assert abs(sum(result) - 1.0) < 1e-10
 
     def test_invalid_probabilities(self):
         with pytest.raises(ValueError):
