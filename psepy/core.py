@@ -112,3 +112,103 @@ def agg_machines(
         T_down_agg = mean_term * (1 - product_term)
 
     return round(c_agg / unit_mapping[c_unit], 4), round(T_up_agg / unit_mapping[T_up_unit], 4), round(T_down_agg / unit_mapping[T_down_unit], 4)
+
+def P_function_two_machine(p1:float,p2:float,N:int)->list:
+    """
+    This function takes in two machine whose  p1 and p2 are the probability of the machine to be working at any given time. 
+    N is the maximum capacity of the buffer between the two machines
+    The function then returns a list contains the probability of the buffer being 0-N at any given time.
+
+    When p1 \neq p2:
+    P_0 = \frac{1 - p_2}{1 - p_2 + \alpha + \alpha^2 + \ldots + \alpha^N}
+    P_i=\frac{\alpha^i}{1 - p_2}P_0, i = 1, 2, \ldots, N
+    where \alpha = \frac{p_1(1 - P_2)}{P_1(1 - p_2)}
+
+    When p1 = p2 = p:
+    P_0 = \frac{1 - p}{N + 1 - p}
+    P_i = \frac{1}{N + 1 - p}, i = 1, 2, \ldots, N
+    Parameters:
+    p1 (float): The probability of machine 1 working at any given time
+    p2 (float): The probability of machine 2 working at any given time
+    N (int): The maximum capacity of the buffer between the two machines
+
+    Returns:
+    list: The probability of the buffer being 0-N at any given time
+    """
+    if p1 == p2:
+        P_0 = (1 - p1)/(N + 1 - p1)
+        P = [P_0] + [1/(N + 1 - p1)]*N
+    else:
+        alpha = p1*(1 - p2)/(p2*(1 - p1))
+        P_0 = (1 - p2)/(1 - p2 + sum([alpha**i for i in range(1, N + 1)]))
+        P = [P_0] + [alpha**i/(1 - p2)*P_0 for i in range(1, N + 1)]
+    return P
+
+P_function_two_machine(0.9, 0.9,5)
+
+def Q_function(p1:float,p2:float,N:int)->float:
+
+    """
+    This function takes in two machine whose  p1 and p2 are the probability of the machine to be working at any given time. 
+    N is the maximum capacity of the buffer between the two machines
+    This function is used to calculate the probability of the buffer is empty.
+    
+    When p1 \neq p2:
+    Q(p_1, p_2, N)= \frac{(1 - p_1)(1 - \alpha(p_1, p_2))}{1 - \frac{p_1}{p_2}alpha^N(p_1, p_2)}
+    where \alpha(p_1, p_2) = \frac{p_1(1 - p_2)}{p_2(1 - p_1)}
+
+    When p1 = p2 = p:
+    Q(p, p, N) = \frac{1 - p}{N + 1 - p}
+
+    Parameters:
+    p1 (float): The probability of machine 1 working at any given time
+    p2 (float): The probability of machine 2 working at any given time
+    N (int): The maximum capacity of the buffer between the two machines
+
+    Returns:
+    float: The probability of the buffer being empty
+    """
+    if p1 == p2:
+        return (1 - p1)/(N + 1 - p1)
+    else:
+        alpha = p1*(1 - p2)/(p2*(1 - p1))
+        return (1 - p1)*(1 - alpha)/(1 - p1*alpha**N/p2)
+    
+def performance_measure_two_machine(p1:float,p2:float,N:int)->dict:
+    """
+    This function takes in two machine whose  p1 and p2 are the probability of the machine to be working at any given time. 
+    N is the maximum capacity of the buffer between the two machines
+    The function then returns a dictionary containing the performance measures of the system, 
+    which contains the production rate(PR), work-in-process(WIP), blockages of machine 1(BL_1) and starvations of machine 2(ST_2).
+
+    PR = p_2(1 - Q(p_1, p_2, N))
+
+    WIP = \sum_{i=0}^{N}iP_i
+    when p_1 \neq p_2:
+    WIP=\frac{p_i}{p_2 - p_1\alpha^N(p_1, p_2)}*(\frac{1-\alpha^N(p_1, p_2)}{1-\alpha(p_1, p_2)} - N\alpha^N(p_1, p_2))
+    when p_1 = p_2 = p:
+    WIP=\frac{N(N + 1)}{2(N + 1 - p)}
+
+    BL_1 = p_1Q(p_2, p_1, N)
+
+    ST_2 = p_2Q(p_1, p_2, N)
+
+    Parameters:
+    p1 (float): The probability of machine 1 working at any given time
+    p2 (float): The probability of machine 2 working at any given time
+    N (int): The maximum capacity of the buffer between the two machines
+
+    Returns:
+    dict: The performance measures of the system, 
+    which contains the production rate(PR), work-in-process(WIP), blockages of machine 1(BL_1) and starvations of machine 2(ST_2). 
+    And PR, BL, and ST are round to four significant digits, WIP is round to two decimal places.
+    """
+    PR = round(p2*(1 - Q_function(p1, p2, N)), 4)
+    if p1 == p2:
+        WIP = round(N*(N + 1)/(2*(N + 1 - p1)), 2)
+    else:
+        alpha = p1*(1 - p2)/(p2*(1 - p1))
+        WIP = round(p1/(p2 - p1*alpha**N)*((1 - alpha**N)/(1 - alpha) - N*alpha**N) , 2)
+    BL_1 = round(p1*Q_function(p2, p1, N), 4)
+    ST_2 = round(p2*Q_function(p1, p2, N), 4)
+    return {"PR": PR, "WIP": WIP, "BL_1": BL_1, "ST_2": ST_2}
