@@ -212,3 +212,58 @@ def performance_measure_two_machine(p1:float,p2:float,N:int)->dict:
     BL_1 = round(p1*Q_function(p2, p1, N), 4)
     ST_2 = round(p2*Q_function(p1, p2, N), 4)
     return {"PR": PR, "WIP": WIP, "BL_1": BL_1, "ST_2": ST_2}
+
+def aggregation_of_bernoulli_lines(p: list[float],M: int,N: list[int])->tuple[list[float], list[float]]:
+    """
+    This function takes in a list of the probability of each machine working at any time from a Bernoulli line
+    and a list of the maximum capacity of the buffer between each machine.
+    The function then returns a tuple containing the list of the probability of forward aggregation p^f and the list of the probability of backward aggregation p^b.
+
+    The recursive aggregation procedure is as follows:
+    
+    defination: 
+        s is the number of iterations, s = 0, 1, 2, ...
+        p_i is the probability of machine i working at any given time
+        
+        initial condition:
+            p_i^f(0) = p_i, i = 1, 2, ..., M
+        
+        boundary condition:
+            p_1^f(s) = p_1, s = 0, 1, 2, ...
+            p_M^b(s) = p_M, s = 0, 1, 2, ...
+        
+        forward aggregation:
+            p_i^b(s+1) = p_i[1 - Q(p_{i + 1}^b(s + 1), p_i^f(s), N_i)], i = M - 1, M - 2, ..., 1
+        
+        backward aggregation:
+            p_i^f(s+1) = p_i[1 - Q(p_{i - 1}^f(s + 1), p_i^b(s + 1), N_{i - 1})], i = 2, 3, ..., M
+
+        Termination condition:
+            The iteration continues until the difference between p_i^f(s) and p_i^f(s - 1) is less than 1e-6 for all i = 2, 3, ..., M;
+            The iteration continues until the difference between p_i^b(s) and p_i^b(s - 1) is less than 1e-6 for all i = 2, 3, ..., M; 
+
+    Parameters:
+        p (list[float]): The probability of each machine working at any time from a Bernoulli line
+        M (int): The number of machines
+        N (list[int]): The maximum capacity of the buffer between each machine
+
+    Returns:
+        tuple[list[float], list[float]]: The tuple containing the list of the probability of forward aggregation p^f and the list of the probability of backward aggregation p^b
+    """
+
+    p_f = p.copy()
+    p_b = p.copy()
+    while True:
+        p_f_new = p_f.copy()
+        p_b_new = p_b.copy()
+ 
+        for i in range(M - 2, -1, -1):
+            p_b_new[i] = p[i]*(1 - Q_function(p_b_new[i+1], p_f_new[i], N[i]))
+        
+        for i in range(1, M):
+            p_f_new[i] = p[i]*(1 - Q_function(p_f_new[i - 1], p_b_new[i], N[i - 1]))
+        if all(abs(p_f_new[i] - p_f[i]) < 1e-6 for i in range(0, M)) and all(abs(p_b_new[i] - p_b[i]) < 1e-6 for i in range(0, M)):
+            break
+        p_f = p_f_new
+        p_b = p_b_new
+    return [round(pf,4) for pf in p_f], [round(pb,4) for pb in p_b]
