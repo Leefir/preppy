@@ -113,7 +113,7 @@ def agg_machines(
 
     return round(c_agg / unit_mapping[c_unit], 4), round(T_up_agg / unit_mapping[T_up_unit], 4), round(T_down_agg / unit_mapping[T_down_unit], 4)
 
-def P_function_two_machine(p1:float,p2:float,N:int)->list:
+def P_function_two_machine_bernoulli(p1:float,p2:float,N:int)->list:
     """
     This function takes in two machine whose  p1 and p2 are the probability of the machine to be working at any given time. 
     N is the maximum capacity of the buffer between the two machines
@@ -144,7 +144,6 @@ def P_function_two_machine(p1:float,p2:float,N:int)->list:
         P = [P_0] + [alpha**i/(1 - p2)*P_0 for i in range(1, N + 1)]
     return P
 
-P_function_two_machine(0.9, 0.9,5)
 
 def Q_function(p1:float,p2:float,N:int)->float:
 
@@ -267,3 +266,67 @@ def aggregation_of_bernoulli_lines(p: list[float],M: int,N: list[int])->tuple[li
         p_f = p_f_new
         p_b = p_b_new
     return [round(pf,4) for pf in p_f], [round(pb,4) for pb in p_b]
+
+def performance_measure_multiply_machine_bernoulli(p: list[float],M: int,N: list[int],t: float)->dict:
+    """
+    This function takes in a list of the probability of each machine working at any time from a Bernoulli line
+    and a list of the maximum capacity of the buffer between each machine, t is the time period of the system.
+    The function then returns a dictionary containing the performance measures of the system, 
+    which contains the list p, p_f, p_b,N, the production rate(PR), work-in-process(WIP), blockages of each machine(BL), starvations of each machine(ST) ,throughput(TP) and the total WIP.
+
+    where p_f and p_b are the probability of forward and backward aggregation respectively, which are calculated from the aggregation_of_bernoulli_lines function.
+
+    The performance measures of the system are calculated as follows:
+    
+        PR = p^b[0] = p_f[M-1]
+
+        when p_f[i] != p_b[i+1]:
+            WIP[i] = \frac{p_f[i]}{p_{b}[i+1] - p_f[i]\alpha^{N[i]}(p_f[i],p_b[i+1])}*(\frac{1-\alpha^{N[i]}(p_f[i],p_b[i+1])}{1-\alpha(p_f[i],p_b[i+1])} - N[i]\alpha^{N[i]}(p_f[i],p_b[i+1]))
+        when p_f[i] = p_b[i+1]:
+            WIP[i]=\frac{N[i](N[i] + 1)}{2(N[i] + 1 - p_f[i])}
+        where i = 1,2,...,M-1
+            
+        TotalWIP = \sum_{i=1}^{M-1}WIP[i]
+
+
+        BL[i] = p[i] * Q(p_b[i+1], p_f[i], N[i]), i = 1, 2, ..., M - 1 
+
+        ST[i] = p[i] * Q(p_f[i-1], p_b[i], N[i-1]), i = 2, 3, ..., M
+
+        TP = PR/t
+    
+    Parameters:
+        p (list[float]): The probability of each machine working at any time from a Bernoulli line
+        M (int): The number of machines
+        N (list[int]): The maximum capacity of the buffer between each machine
+        t (float): The time period of the system
+
+    Returns:
+        dict: The performance measures of the system, 
+        which contains list p, p_f, p_b,N, the production rate(PR), work-in-process(WIP), blockages of each machine(BL), starvations of each machine(ST), TP and the total WIP.
+        And PR, BL, ST, TP are round to four significant digits, WIP is round to two decimal places, they are all list.
+        The total WIP is the sum of the WIP of each machine, which is round to two decimal places.
+    """
+
+    p_f, p_b = aggregation_of_bernoulli_lines(p, M, N)
+    PR = round(p_b[0], 4)
+    WIP = []
+    BL = []
+    ST = []
+    for i in range(0, M-1):
+        if p_f[i] != p_b[i+1]:
+            alpha = p_f[i]*(1 - p_b[i+1])/(p_b[i+1]*(1 - p_f[i]))
+            WIP.append(p_f[i]/(p_b[i+1] - p_f[i]*alpha**N[i])*((1 - alpha**N[i])/(1 - alpha) - N[i]*alpha**N[i]))
+        else:
+            WIP.append(N[i]*(N[i] + 1)/(2*(N[i] + 1 - p_f[i])))
+    for i in range(0, M-1):
+        BL.append(round(p[i]*Q_function(p_b[i+1], p_f[i], N[i]), 4))
+    BL.append(0)
+    ST.append(0)
+    for i in range(1, M):
+        ST.append(round(p[i]*Q_function(p_f[i - 1], p_b[i], N[i - 1]), 4))
+    
+    TotalWIP = round(sum(WIP), 2)
+    WIP = [round(w, 2) for w in WIP]
+    TP = round(PR/t, 4)
+    return {"p":p, 'pf':p_f, 'pb':p_b, "ST": ST, "BL": BL, 'N':N,"WIP": WIP, "PR": PR, "TotalWIP": TotalWIP, "TP":TP}
