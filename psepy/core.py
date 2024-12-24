@@ -145,7 +145,7 @@ def P_function_two_machine_bernoulli(p1:float,p2:float,N:int)->list:
     return P
 
 
-def Q_function(p1:float,p2:float,N:int)->float:
+def Q_function_bernoulli(p1:float,p2:float,N:int)->float:
 
     """
     This function takes in two machine whose  p1 and p2 are the probability of the machine to be working at any given time. 
@@ -202,14 +202,14 @@ def performance_measure_two_machine(p1:float,p2:float,N:int)->dict:
     which contains the production rate(PR), work-in-process(WIP), blockages of machine 1(BL_1) and starvations of machine 2(ST_2). 
     And PR, BL, and ST are round to four significant digits, WIP is round to two decimal places.
     """
-    PR = round(p2*(1 - Q_function(p1, p2, N)), 4)
+    PR = round(p2*(1 - Q_function_bernoulli(p1, p2, N)), 4)
     if p1 == p2:
         WIP = round(N*(N + 1)/(2*(N + 1 - p1)), 2)
     else:
         alpha = p1*(1 - p2)/(p2*(1 - p1))
         WIP = round(p1/(p2 - p1*alpha**N)*((1 - alpha**N)/(1 - alpha) - N*alpha**N) , 2)
-    BL_1 = round(p1*Q_function(p2, p1, N), 4)
-    ST_2 = round(p2*Q_function(p1, p2, N), 4)
+    BL_1 = round(p1*Q_function_bernoulli(p2, p1, N), 4)
+    ST_2 = round(p2*Q_function_bernoulli(p1, p2, N), 4)
     return {"PR": PR, "WIP": WIP, "BL_1": BL_1, "ST_2": ST_2}
 
 def aggregation_of_bernoulli_lines(p: list[float],M: int,N: list[int])->tuple[list[float], list[float]]:
@@ -257,10 +257,10 @@ def aggregation_of_bernoulli_lines(p: list[float],M: int,N: list[int])->tuple[li
         p_b_new = p_b.copy()
  
         for i in range(M - 2, -1, -1):
-            p_b_new[i] = p[i]*(1 - Q_function(p_b_new[i+1], p_f_new[i], N[i]))
+            p_b_new[i] = p[i]*(1 - Q_function_bernoulli(p_b_new[i+1], p_f_new[i], N[i]))
         
         for i in range(1, M):
-            p_f_new[i] = p[i]*(1 - Q_function(p_f_new[i - 1], p_b_new[i], N[i - 1]))
+            p_f_new[i] = p[i]*(1 - Q_function_bernoulli(p_f_new[i - 1], p_b_new[i], N[i - 1]))
         if all(abs(p_f_new[i] - p_f[i]) < 1e-6 for i in range(0, M)) and all(abs(p_b_new[i] - p_b[i]) < 1e-6 for i in range(0, M)):
             break
         p_f = p_f_new
@@ -320,11 +320,11 @@ def performance_measure_multiply_machine_bernoulli(p: list[float],M: int,N: list
         else:
             WIP.append(N[i]*(N[i] + 1)/(2*(N[i] + 1 - p_f[i])))
     for i in range(0, M-1):
-        BL.append(round(p[i]*Q_function(p_b[i+1], p_f[i], N[i]), 4))
+        BL.append(round(p[i]*Q_function_bernoulli(p_b[i+1], p_f[i], N[i]), 4))
     BL.append(0)
     ST.append(0)
     for i in range(1, M):
-        ST.append(round(p[i]*Q_function(p_f[i - 1], p_b[i], N[i - 1]), 4))
+        ST.append(round(p[i]*Q_function_bernoulli(p_f[i - 1], p_b[i], N[i - 1]), 4))
     
     TotalWIP = round(sum(WIP), 2)
     WIP = [round(w, 2) for w in WIP]
